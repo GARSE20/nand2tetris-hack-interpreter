@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Set
 
 from numpy import binary_repr, int16
 
@@ -39,12 +39,11 @@ class Memory:
     def size(self) -> int:
         return len(self.mem)
 
-    def to_json(self) -> str:
+    def to_json(self, used: Set[int16]) -> str:
         json = '{\n\t"RAM": {\n'
         for address, value in enumerate(self.mem):
-            json += (
-                f"""\t\t\"{address}\": {int16(int(value, 2))}"""
-                + f"""{["", ","][address != len(self.mem) - 1]}\n"""
-            )
-        json += "\t}\n}\n"
+            if address not in used:
+                continue
+            json += f"""\t\t\"{address}\": {int(value, 2)},\n"""
+        json = json[:-2] + "\n\t}\n}\n"
         return json

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Set
 
 from numpy import int16
 
@@ -13,14 +13,16 @@ from n2t.core.interpreter.state import State
 class Interpreter:
     state: State
     cycles: int
+    used: Set[int16]
     NO_DESTINATION = ""
     NO_JUMP = ""
 
     @classmethod
     def create(cls, instructions: Iterable[str], cycles: int) -> Interpreter:
-        return cls(State(list(instructions)), cycles)
+        return cls(State(list(instructions)), cycles, set())
 
     def interpret(self) -> None:
+        self.used = set()
         while self.cycles:
             self.cycles -= 1
             if self.state.reg_pc >= self.state.rom.size():
@@ -42,6 +44,9 @@ class Interpreter:
         computation = Mappings.COMPUTATION_MAP[instruction[:7]]
         dest = Mappings.DESTINATION_MAP[instruction[7:10]]
         jump = Mappings.JUMP_MAP[instruction[-3:]]
+
+        if dest.find("M") >= 0 or computation.find("M") >= 0:
+            self.used.add(self.state.reg_a)
 
         computed_value = int16(
             eval(
@@ -73,4 +78,4 @@ class Interpreter:
                 self.state.reg_pc = self.state.reg_a
 
     def print_ram(self) -> str:
-        return self.state.ram.to_json()
+        return self.state.ram.to_json(self.used)
